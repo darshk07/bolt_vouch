@@ -16,12 +16,13 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  certificates Certificate[]
+  id                  String               @id @default(uuid())
+  email               String               @unique
+  name                String
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  certificates        Certificate[]
+  certificateRequests CertificateRequest[]
 }
 
 model Organization {
@@ -30,18 +31,56 @@ model Organization {
   email     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  certificates Certificate[]
+
+  certificates        Certificate[]
+  certificateRequests CertificateRequest[]
+  orgInvites          OrgInvite[] // Add this line
 }
 
 model Certificate {
-  id             String   @id @default(uuid())
+  id             String       @id @default(uuid())
   title          String
-  hash           String   @unique
+  hash           String       @unique
   ipfsUrl        String
-  issuedAt       DateTime @default(now())
+  issuedAt       DateTime     @default(now())
   userId         String
   organizationId String
-  user           User      @relation(fields: [userId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
   organization   Organization @relation(fields: [organizationId], references: [id])
 }
 
+model CertificateRequest {
+  id            String        @id @default(uuid())
+  userId        String
+  orgId         String
+  status        RequestStatus @default(PENDING)
+  certificateId String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id])
+  organization Organization @relation(fields: [orgId], references: [id])
+}
+
+model OrgInvite {
+  id         String       @id @default(uuid())
+  orgId      String
+  userEmail  String // invitation is typically email-based
+  status     InviteStatus @default(PENDING) // PENDING, ACCEPTED, EXPIRED
+  createdAt  DateTime     @default(now())
+  acceptedAt DateTime?
+
+  organization Organization @relation(fields: [orgId], references: [id])
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+}
